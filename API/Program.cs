@@ -13,6 +13,7 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
+        var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddControllers();
@@ -28,6 +29,15 @@ internal class Program
         builder.Services.AddDbContext<ApplicationContext>(_ =>
             _.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(name: MyAllowSpecificOrigins,
+                              policy =>
+                              {
+                                  policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
+                              });
+        }); 
+
         var app = builder.Build();
 
         await app.UseDBMigrationsAndSeedData();
@@ -36,9 +46,11 @@ internal class Program
 
         app.UseStatusCodePagesWithReExecute("/errors/{0}");
 
+        app.UseStaticFiles();
+
         app.UseHttpsRedirection();
 
-        app.UseStaticFiles();
+        app.UseCors(MyAllowSpecificOrigins);
 
         app.UseAuthorization();
 
