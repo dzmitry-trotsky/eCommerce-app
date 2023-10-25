@@ -18,30 +18,51 @@ namespace Infrastructure.Data
         {
             _context = context;
         }
+        public void Add(T entity)
+        {
+            _context.Set<T>().Add(entity);
+        }
+
+        public async Task<int> CountAsync(ISpecification<T> spec)
+        {
+            return await ApplySpecification(spec).CountAsync();
+        }
+
+        public void Delete(T entity)
+        {
+            _context.Set<T>().Remove(entity);
+        }
+
+        public async Task<T> GetByIdAsync(int id)
+        {
+            return await _context.Set<T>().FindAsync(id);
+        }
+
+        public async Task<T> GetEntityWithSpec(ISpecification<T> spec)
+        {
+            return await ApplySpecification(spec).FirstOrDefaultAsync();
+        }
 
         public async Task<IReadOnlyList<T>> GetAllAsync()
         {
             return await _context.Set<T>().ToListAsync();
         }
 
-        public async Task<T> GetByIdAsync(int id)
+        public async Task<IReadOnlyList<T>> AllAsync(ISpecification<T> spec)
         {
-            return await _context.Set<T>().FindAsync();
+            return await ApplySpecification(spec).ToListAsync();
         }
 
-        public async Task<IReadOnlyList<T>> AllAsync(ISpecification<T> specification)
+        public void Update(T entity)
         {
-            return await ApplySpecification(specification).ToListAsync();
+            _context.Set<T>().Attach(entity);
+            _context.Entry(entity).State = EntityState.Modified;
         }
 
-        public async Task<T> GetEntityWithSpec(ISpecification<T> specification)
+        private IQueryable<T> ApplySpecification(ISpecification<T> spec)
         {
-            return await ApplySpecification(specification).FirstOrDefaultAsync();
+            return SpecificationEvaluator<T>.GetQuery(_context.Set<T>().AsQueryable(), spec);
         }
 
-        private IQueryable<T> ApplySpecification(ISpecification<T> specification)
-        {
-            return SpecificationEvaluator<T>.GetQuery(_context.Set<T>().AsQueryable(), specification);
-        }
     }
 }
